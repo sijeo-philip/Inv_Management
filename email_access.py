@@ -3,6 +3,7 @@
 
 
 from Inv_Library import EmailCred
+from Inv_Library import validate_email
 
 
 mail_content = '''Hello, This is a simple mail. there is only text, 
@@ -16,6 +17,11 @@ receiver_address= 'sijeo80@gmail.com'
 sub 			= 'Test Mail'
 
 
-new_email = EmailCred(sender_address, sender_pass)
-new_email.send_email(sub, receiver_address, mail_content)
+if (validate_email(sender_address)):
+	new_email = EmailCred(sender_address, sender_pass)
+	new_email.send_email(sub, receiver_address, mail_content)
+else:
+	print("Invalid Email Account")
+
+
 
