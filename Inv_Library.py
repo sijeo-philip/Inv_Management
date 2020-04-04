@@ -50,6 +50,7 @@ class EmailCred:
 				attachfile = open(attach_file_name, "rb")
 				payload = MIMEBase('application', 'octet-stream')
 				payload.set_payload(attachfile.read())
+				attachfile.close()
 			except Exception as e:
 				print(e)
 				return False
@@ -79,5 +80,7 @@ class EmailCred:
 				print("Invalid Email ID")
 				return False
 		
-		
+	def read_email(self, sender_email_id, has_attachment=True):
+		pass
+
 
