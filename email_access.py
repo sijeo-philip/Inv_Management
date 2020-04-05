@@ -19,7 +19,7 @@ sub 			= 'Test Mail'
 
 if (validate_email(sender_address)):
 	new_email = EmailCred(sender_address, sender_pass)
-	new_email.send_email(sub, receiver_address, mail_content, True)
+	print(new_email.check_new_mail())
 else:
 	print("Invalid Email Account")
 

@@ -10,11 +10,15 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
+import imaplib
+from email.parser import BytesParser, Parser 
+from email.policy import default
 import os
 import re
 import sys
 
 email_regex = r'^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})'
+email_dict = {}
 
 
 def validate_email(email_id):
@@ -80,7 +84,30 @@ class EmailCred:
 				print("Invalid Email ID")
 				return False
 		
-	def read_email(self, sender_email_id, has_attachment=True):
-		pass
+	def check_new_mail(self):
+		email_dict.clear()
+		try:
+			imap = imaplib.IMAP4_SSL("imap.gmail.com", 993)
+			imap.login(self.sender_add, self. sender_pass)
+			imap.select("INBOX")
+			status , response = imap.search(None, '(UNSEEN)')
+			unread_msg_nums = response[0].split()
+			if len(unread_msg_nums) > 0 :
+				for e_id in unread_msg_nums:
+					_, response = imap.fetch(e_id, '(RFC822)')
+					headers = Parser(policy=default).parsestr(response[0][1].decode("utf-8"))
+					email_dict[e_id] = headers['from']
+
+			imap.logout()
+		except Exception as e:
+			print(e)
+			return email_dict
+
+		return email_dict;
+
+
+
+
+		
 
 
