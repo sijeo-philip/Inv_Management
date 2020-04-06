@@ -10,6 +10,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
+import email
 import imaplib
 from email.parser import BytesParser, Parser 
 from email.policy import default
@@ -32,10 +33,10 @@ class EmailCred:
 	def __init__(self, sender_add, sender_pass):
 		self.sender_add = sender_add
 		self.sender_pass = sender_pass
-		osType = sys.platform
-		if ( osType == 'win32' ):
+		self.osType = sys.platform
+		if ( self.osType == 'win32' ):
 			os.system('mkdir C:\\component_requests')
-		elif ( osType == 'linux1' or osType == 'linux2'):
+		elif ( self.osType == 'linux1' or self.osType == 'linux2'):
 			os.system('mkdir \\home\\component_requests')
 
 	def send_email(self, subject, receiver_address, mail_content,attachment=False):
@@ -48,8 +49,14 @@ class EmailCred:
 		message.attach(MIMEText(mail_content, 'plain'))
 		#Create SMTP session for sending the mail
 		if ( True == attachment ):
-			attach_file_dir = os.path.join("C:\\", "component_requests")
-			attach_file_name = os.path.join(attach_file_dir, "component_requests.xlsx")
+			if self.osType == 'win32':
+				attach_file_dir = os.path.join("C:\\", "component_requests")
+				attach_file_name = os.path.join(attach_file_dir, "component_requests.xlsx")
+			elif (self.osType == 'linux1' or self.osType == 'linux2'):
+				attach_file_dir = os.path.join("\\home\\", "component_requests")
+				attach_file_name = os.path.join(attach_file_dir, "component_requests.xlsx")
+			else:
+				return False
 			try:
 				attachfile = open(attach_file_name, "rb")
 				payload = MIMEBase('application', 'octet-stream')
@@ -96,7 +103,7 @@ class EmailCred:
 				for e_id in unread_msg_nums:
 					_, response = imap.fetch(e_id, '(RFC822)')
 					headers = Parser(policy=default).parsestr(response[0][1].decode("utf-8"))
-					email_dict[e_id] = headers['from']
+					email_dict[e_id.decode()] = headers['from']
 
 			imap.logout()
 		except Exception as e:
@@ -104,6 +111,45 @@ class EmailCred:
 			return email_dict
 
 		return email_dict;
+
+	def read_email(self, email_id):
+		try:
+			imap = imaplib.IMAP4_SSL("imap.gmail.com", 993)
+			imap.login(self.sender_add, self.sender_pass)
+			imap.select("INBOX")
+			typ, data = imap.fetch(email_id, '(RFC822)')
+			raw_email = data[0][1]
+		except Exception as e:
+			return e
+
+       
+		#converts byte literal to string removing b ''
+		raw_email_string = raw_email.decode('utf-8')
+		email_message = email.message_from_string(raw_email_string)
+
+		#downloading attachements
+		for msg in email_message.walk():
+			if msg.get_content_maintype() == 'multipart':
+				continue
+			if msg.get('Content-Disposition') is None:
+				continue
+			fileName = msg.get_filename()
+
+			if (bool(fileName) and (fileName == 'component_requests.xlsx')):
+				if self.osType == 'win32':
+					attach_file_dir = os.path.join("C:\\", "component_requests")
+				elif (self.osType == 'linux1' or self.osType == 'linux2'):
+					attach_file_dir = os.path.join("\\home\\", "component_requests")
+				else:
+					return "Not Compatible OS"
+				attach_file_name = os.path.join(attach_file_dir, "component_requests.xlsx")
+				with open(attach_file_name, 'wb' ) as f:
+					f.write(msg.get_payload(decode=True))
+				return "File Downloaded"
+		return "No Attachment Found!"
+
+
+
 
 
 
